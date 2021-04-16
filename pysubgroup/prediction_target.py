@@ -37,8 +37,8 @@ class PredictionTarget:
     def get_base_statistics(self, subgroup, data):
         cover_arr, size_sg = ps.get_cover_array_and_size(subgroup)
         size_dataset = data.shape[0]
-        metric_sg = self.evaluation_metric(y_true=self.target_variable[cover_arr], y_pred=self.target_estimate[cover_arr])
-        metric_dataset = self.evaluation_metric(y_true=self.target_variable, y_pred=self.target_estimate)
+        metric_sg = self.evaluation_metric(self.target_variable[cover_arr], self.target_estimate[cover_arr])
+        metric_dataset = self.evaluation_metric(self.target_variable, self.target_estimate)
         return (size_sg, size_dataset, metric_sg, metric_dataset)
 
     def calculate_statistics(self, subgroup, data, cached_statistics=None):
@@ -51,10 +51,10 @@ class PredictionTarget:
 
         cover_arr, size_sg = ps.get_cover_array_and_size(subgroup, len(data), data)
 
-        statistics['size_sg'] = len(size_sg)
-        statistics['size_dataset'] = len(data)
-        statistics['metric_sg'] = self.evaluation_metric(y_true=self.target_variable[cover_arr], y_pred=self.target_estimate[cover_arr])
-        statistics['metric_dataset'] = self.evaluation_metric(y_true=self.target_variable, y_pred=self.target_estimate)
+        statistics['size_sg'] = size_sg
+        statistics['size_dataset'] = data.shape[0]
+        statistics['metric_sg'] = self.evaluation_metric(self.target_variable[cover_arr], self.target_estimate[cover_arr])
+        statistics['metric_dataset'] = self.evaluation_metric(self.target_variable, self.target_estimate)
         return statistics
 
 
@@ -75,13 +75,13 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
         self.all_target_estimate = None
         self.all_target_metric = None
         self.has_constant_statistics = False
-        self.estimator = PredictionQFNumeric.not_an_estimator(self)
+        self.estimator = PredictionQFNumeric.NotAnEstimator(self)
 
     def calculate_constant_statistics(self, data, target):
         self.size = len(data)
-        self.all_target_variable = data[target.target_variable].to_numpy()
-        self.all_target_estimate = data[target.target_estimate].to_numpy()
-        self.all_target_metric = target.evaluation_metric(y_true=self.all_target_values, y_pred=self.all_target_estimate)
+        self.all_target_variable = target.target_variable
+        self.all_target_estimate = target.target_estimate
+        self.all_target_metric = target.evaluation_metric(self.all_target_variable, self.all_target_estimate)
         self.has_constant_statistics = True
         self.estimator.calculate_constant_statistics(data, target)
         self.dataset_statistics = PredictionQFNumeric.tpl(self.size, self.all_target_metric)
@@ -110,7 +110,7 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
         statistics = self.ensure_statistics(subgroup, target, data, statistics)
         return statistics.estimate
 
-    class not_an_estimator:
+    class NotAnEstimator:
         def __init__(self, qf):
             self.qf = qf
             self.metric = None
@@ -122,7 +122,8 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
             self.metric = target.evaluation_metric
 
         def get_estimate(self, subgroup, sg_target_variable, sg_target_estimate):  # pylint: disable=unused-argument
-            return self.metric(y_true=sg_target_variable, y_pred=sg_target_estimate)
+            return float('inf')
+            #return self.metric(y_true=sg_target_variable, y_pred=sg_target_estimate)
 
 
 
