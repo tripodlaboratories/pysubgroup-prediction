@@ -10,6 +10,7 @@ import numpy as np
 import pysubgroup as ps
 import sklearn.metrics as metrics #TODO: import of entire package may be uneccesary, see if attribute list can be used
 
+
 @total_ordering
 class PredictionTarget:
     statistic_types = ('size_sg', 'size_dataset', "metric_sg", "metric_dataset")
@@ -19,6 +20,8 @@ class PredictionTarget:
         self.target_estimate = target_estimate
         if not hasattr(metrics, eval_func.__name__):
             raise ValueError("eval_func passed must be from sklearn.metrics")
+
+        # TODO: move evaluation metric to qualit function
         self.evaluation_metric = eval_func
 
     def __repr__(self):
@@ -93,8 +96,6 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
         return PredictionQFNumeric.prediction_qf_numeric(self.a, statistics.size_sg, statistics.metric_sg)
 
 
-
-
     def calculate_statistics(self, subgroup, target, data, statistics=None):
         cover_arr, sg_size = ps.get_cover_array_and_size(subgroup, len(self.all_target_variable), data)
         if sg_size > 0:
@@ -121,12 +122,11 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
         def calculate_constant_statistics(self, data, target):  # pylint: disable=unused-argument
             self.metric = target.evaluation_metric
 
+        # TODO: either return +inf or better `size_sg ** a * (<MAXIMUM VALUE OF METRIC>)`
+        #   <MAXIMUM VALUE OF METRIC> might have to be configurable based on the used metric 
         def get_estimate(self, subgroup, sg_target_variable, sg_target_estimate):  # pylint: disable=unused-argument
             return float('inf')
             #return self.metric(y_true=sg_target_variable, y_pred=sg_target_estimate)
-
-
-
 
 
 # TODO Update to new format
