@@ -62,7 +62,7 @@ class PredictionTarget:
 
 
 class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
-    tpl = namedtuple('PredictionQFNumeric_parameters', ('size_sg', 'metric_sg'))
+    tpl = namedtuple('PredictionQFNumeric_parameters', ('size_sg', 'metric_sg', 'estimate'))
     @staticmethod
     def prediction_qf_numeric(a, size_sg, metric_sg):
         return size_sg ** a * (metric_sg)
@@ -71,6 +71,7 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
         if not isinstance(a, numbers.Number):
             raise ValueError(f'a is not a number. Received a={a}')
         self.a = a
+        self.size=None
         self.invert = invert
         self.required_stat_attrs = ('size_sg', 'metric_sg')
         self.dataset_statistics = None
@@ -78,16 +79,17 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
         self.all_target_estimate = None
         self.all_target_metric = None
         self.has_constant_statistics = False
-        self.estimator = PredictionQFNumeric.NotAnEstimator(self)
+        self.estimator = PredictionQFNumeric.OptimisticEstimator(self)
 
+    #TODO: raise error when data does not align with target vars
     def calculate_constant_statistics(self, data, target):
         self.size = len(data)
         self.all_target_variable = target.target_variable
         self.all_target_estimate = target.target_estimate
         self.all_target_metric = target.evaluation_metric(self.all_target_variable, self.all_target_estimate)
         self.has_constant_statistics = True
-        self.estimator.calculate_constant_statistics(data, target)
-        self.dataset_statistics = PredictionQFNumeric.tpl(self.size, self.all_target_metric)
+        estimate = self.estimator.get_estimate(self.size, self.a)
+        self.dataset_statistics = PredictionQFNumeric.tpl(self.size, self.all_target_metric, estimate)
 
 
     def evaluate(self, subgroup, target, data, statistics=None):
@@ -98,20 +100,22 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
 
     def calculate_statistics(self, subgroup, target, data, statistics=None):
         cover_arr, sg_size = ps.get_cover_array_and_size(subgroup, len(self.all_target_variable), data)
-        if sg_size > 0:
+        if sg_size > 0 and np.std(self.all_target_variable[cover_arr]) != 0:
             sg_target_variable = self.all_target_variable[cover_arr]
             sg_target_estimate = self.all_target_estimate[cover_arr]
-            estimate = self.estimator.get_estimate(subgroup, sg_target_variable, sg_target_estimate)
+            estimate = self.estimator.get_estimate(sg_size, self.a)
+            metric_sg = target.evaluation_metric(sg_target_variable, sg_target_estimate)
         else:
             estimate = float('-inf')
-        return PredictionQFNumeric.tpl(sg_size, estimate)
+            metric_sg = 0# float('-inf')
+        return PredictionQFNumeric.tpl(sg_size, metric_sg, estimate)
 
 
     def optimistic_estimate(self, subgroup, target, data, statistics=None):
         statistics = self.ensure_statistics(subgroup, target, data, statistics)
         return statistics.estimate
 
-    class NotAnEstimator:
+    class OptimisticEstimator:
         def __init__(self, qf):
             self.qf = qf
             self.metric = None
@@ -120,12 +124,11 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
             return data
 
         def calculate_constant_statistics(self, data, target):  # pylint: disable=unused-argument
-            self.metric = target.evaluation_metric
+            self.metric = float('inf')# target.evaluation_metric
 
-        # TODO: either return +inf or better `size_sg ** a * (<MAXIMUM VALUE OF METRIC>)`
-        #   <MAXIMUM VALUE OF METRIC> might have to be configurable based on the used metric 
-        def get_estimate(self, subgroup, sg_target_variable, sg_target_estimate):  # pylint: disable=unused-argument
-            return float('inf')
+        def get_estimate(self, size_sg, a):  # pylint: disable=unused-argument
+            max_possible = 1
+            return size_sg ** a * (max_possible) #TODO: how to extract max from all sklearn metrics dynamically
             #return self.metric(y_true=sg_target_variable, y_pred=sg_target_estimate)
 
 
