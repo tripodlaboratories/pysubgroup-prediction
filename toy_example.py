@@ -34,7 +34,7 @@ X = data[set(select) - set(["Survived"])]
 y = data["Survived"]
 
 y = y.loc[X.isna().sum(axis=1) == 0]
-X = X.loc[X.isna().sum(axis=1) == 0]
+X = X.loc[X.isna().sum(axis=1) == 0][["Age", "Fare", "Pclass"]]
 #create simple model to test PredictionQF
 RF = rf_classifier.fit(X[["Age", "Fare", "Pclass"]], y)
 y_hat = RF.predict_proba(X)[:,1]

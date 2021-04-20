@@ -13,7 +13,7 @@ import sklearn.metrics as metrics #TODO: import of entire package may be unecces
 
 @total_ordering
 class PredictionTarget:
-    statistic_types = ('size_sg', 'size_dataset', "metric_sg", "metric_dataset")
+    statistic_types = ('size_sg', 'size_dataset', 'pos_sg', 'pos_dataset', 'neg_sg', 'neg_dataset',  "metric_sg", "metric_dataset")
 
     def __init__(self, target_variable, target_estimate, eval_func):
         self.target_variable = target_variable
@@ -56,6 +56,12 @@ class PredictionTarget:
 
         statistics['size_sg'] = size_sg
         statistics['size_dataset'] = data.shape[0]
+
+        statistics['pos_sg'] = self.target_variable[cover_arr].sum()
+        statistics['pos_dataset'] = self.target_variable.sum()
+        statistics['neg_sg'] = (1 - self.target_variable[cover_arr]).sum()
+        statistics['neg_dataset'] = (1 - self.target_variable).sum()
+
         statistics['metric_sg'] = self.evaluation_metric(self.target_variable[cover_arr], self.target_estimate[cover_arr])
         statistics['metric_dataset'] = self.evaluation_metric(self.target_variable, self.target_estimate)
         return statistics
