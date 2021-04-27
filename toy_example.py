@@ -18,7 +18,7 @@ pd.set_option('display.max_colwidth', 150)
 import pysubgroup as ps
 
 # sklearn imports for evaluating results
-from sklearn.metrics import precision_recall_curve, roc_auc_score, roc_curve, auc #collects AUPRC + AUROC
+from sklearn.metrics import precision_recall_curve, average_precision_score, roc_auc_score, roc_curve, auc #collects AUPRC + AUROC
 from sklearn.metrics import confusion_matrix # used to collect true-pos. fals-negs, ect.
 
 #test model
@@ -80,3 +80,26 @@ resultA_numba = ps.Apriori(use_numba=True).execute(task)
 resultSimpleDFS = ps.SimpleDFS().execute(task)
 resultDFS = ps.DFS(ps.BitSetRepresentation).execute(task)
 resultDFS.to_dataframe()
+
+
+############################################################
+## Toy example using the default eval to generate answers ##
+############################################################
+
+
+np.random.seed(1111)
+
+eval_dict = {"AUROC":roc_auc_score, "average_precision_score":average_precision_score}
+target_variables = np.random.randint(low=0, high=2, size=1000)
+target_estimates = np.random.uniform(size=1000)
+target = ps.PredictionTarget(target_variables, target_estimates, eval_dict=eval_dict)
+
+
+searchSpace_Nominal = ps.create_nominal_selectors(data, ignore=['credit_amount'])
+searchSpace_Numeric = [] #ps.create_numeric_selectors(data, ignore=['credit_amount'], nbins=10)
+searchSpace = searchSpace_Nominal + searchSpace_Numeric
+
+task = ps.SubgroupDiscoveryTask(data, target, searchSpace, result_set_size=10, depth=5, qf=ps.CountCallsInterestingMeasure(ps.PredictionQFNumeric(1, False)))
+
+resultBS = ps.BeamSearch().execute(task)
+resultBS.to_dataframe()

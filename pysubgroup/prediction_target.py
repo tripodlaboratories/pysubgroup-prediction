@@ -4,6 +4,7 @@ Created on 14.04.2021
 @author: Tony Culos
 '''
 import numbers
+import operator
 from collections import namedtuple
 from functools import total_ordering
 import numpy as np
@@ -13,16 +14,22 @@ import sklearn.metrics as metrics #TODO: import of entire package may be unecces
 
 @total_ordering
 class PredictionTarget:
-    statistic_types = ('size_sg', 'size_dataset', 'pos_sg', 'pos_dataset', 'neg_sg', 'neg_dataset',  "metric_sg", "metric_dataset")
+    statistic_types = ('size_sg', 'size_dataset', 'pos_sg', 'pos_dataset', 'neg_sg', 'neg_dataset', "metric_sg", "metric_dataset")
 
-    def __init__(self, target_variable, target_estimate, eval_func):
+    def __init__(self, target_variable, target_estimate, eval_func=None, eval_dict=None):
         self.target_variable = target_variable
         self.target_estimate = target_estimate
-        if not hasattr(metrics, eval_func.__name__):
+        self.eval_dict = eval_dict
+        if not eval_dict is None:
+            PredictionTarget.statistic_types = PredictionTarget.statistic_types + tuple([x +"_sg" for x in eval_dict.keys()]) + tuple([x +"_dataset" for x in eval_dict.keys()])
+        if eval_func is None:
+            self.statistic_types = self.statistic_types + tuple([x +"_sg" for x in eval_dict.keys()]) + tuple([x +"_dataset" for x in eval_dict.keys()])
+            self.evaluation_metric = self.default_evaluation_metric
+        elif not hasattr(metrics, eval_func.__name__):
             raise ValueError("eval_func passed must be from sklearn.metrics")
-
-        # TODO: move evaluation metric to qualit function
-        self.evaluation_metric = eval_func
+        else:
+            # TODO: move evaluation metric to qualit function
+            self.evaluation_metric = eval_func
 
     def __repr__(self):
         return "T: " + str(self.target_variable) + "\nT_hat: " +str(self.target_estimate)
@@ -35,6 +42,14 @@ class PredictionTarget:
 
     def get_attributes(self):
         return [self.target_variable, self.target_estimate]
+
+    #default eval function is average sub ranking loss, see Duivesteijn & Thaele
+    def default_evaluation_metric(self, y_true, y_pred):
+        sorted_true = y_true[np.argsort(y_pred)]
+        numerator_sum = 0
+        for i in range(len(y_true)):
+            if sorted_true[i] == 1: numerator_sum += (sorted_true[0:i] == 0).sum()
+        return numerator_sum/y_true.sum()
 
     #TODO: not sure if necessary but updated to return new statistics
     def get_base_statistics(self, subgroup, data):
@@ -64,6 +79,12 @@ class PredictionTarget:
 
         statistics['metric_sg'] = self.evaluation_metric(self.target_variable[cover_arr], self.target_estimate[cover_arr])
         statistics['metric_dataset'] = self.evaluation_metric(self.target_variable, self.target_estimate)
+
+        if not self.eval_dict is None:
+            for key in self.eval_dict.keys():
+                statistics[key+"_sg"] = self.eval_dict[key](self.target_variable[cover_arr], self.target_estimate[cover_arr])
+                statistics[key+"_dataset"] = self.eval_dict[key](self.target_variable, self.target_estimate)
+
         return statistics
 
 
