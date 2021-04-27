@@ -23,7 +23,6 @@ class PredictionTarget:
         if not eval_dict is None:
             PredictionTarget.statistic_types = PredictionTarget.statistic_types + tuple([x +"_sg" for x in eval_dict.keys()]) + tuple([x +"_dataset" for x in eval_dict.keys()])
         if eval_func is None:
-            self.statistic_types = self.statistic_types + tuple([x +"_sg" for x in eval_dict.keys()]) + tuple([x +"_dataset" for x in eval_dict.keys()])
             self.evaluation_metric = self.default_evaluation_metric
         elif not hasattr(metrics, eval_func.__name__):
             raise ValueError("eval_func passed must be from sklearn.metrics")
