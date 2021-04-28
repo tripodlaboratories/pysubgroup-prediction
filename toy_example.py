@@ -99,7 +99,9 @@ searchSpace_Nominal = ps.create_nominal_selectors(data, ignore=['credit_amount']
 searchSpace_Numeric = [] #ps.create_numeric_selectors(data, ignore=['credit_amount'], nbins=10)
 searchSpace = searchSpace_Nominal + searchSpace_Numeric
 
-task = ps.SubgroupDiscoveryTask(data, target, searchSpace, result_set_size=10, depth=5, qf=ps.CountCallsInterestingMeasure(ps.PredictionQFNumeric(1, False)))
+task = ps.SubgroupDiscoveryTask(data, target, searchSpace,
+                                result_set_size=10, depth=5,
+                                qf=ps.CountCallsInterestingMeasure(ps.PredictionQFNumeric(0, False)))
 
 resultBS = ps.BeamSearch().execute(task)
-resultBS.to_dataframe()
+resultBS.to_dataframe()[["subgroup", "quality", "size_sg", "size_dataset", "metric_sg", "metric_dataset"]]

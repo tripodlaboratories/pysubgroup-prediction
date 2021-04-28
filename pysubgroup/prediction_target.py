@@ -23,7 +23,7 @@ class PredictionTarget:
         if not eval_dict is None:
             PredictionTarget.statistic_types = PredictionTarget.statistic_types + tuple([x +"_sg" for x in eval_dict.keys()]) + tuple([x +"_dataset" for x in eval_dict.keys()])
         if eval_func is None:
-            self.evaluation_metric = self.default_evaluation_metric
+            self.evaluation_metric = default_evaluation_metric
         elif not hasattr(metrics, eval_func.__name__):
             raise ValueError("eval_func passed must be from sklearn.metrics")
         else:
@@ -41,14 +41,6 @@ class PredictionTarget:
 
     def get_attributes(self):
         return [self.target_variable, self.target_estimate]
-
-    #default eval function is average sub ranking loss, see Duivesteijn & Thaele
-    def default_evaluation_metric(self, y_true, y_pred):
-        sorted_true = y_true[np.argsort(y_pred)]
-        numerator_sum = 0
-        for i in range(len(y_true)):
-            if sorted_true[i] == 1: numerator_sum += (sorted_true[0:i] == 0).sum()
-        return numerator_sum/y_true.sum()
 
     #TODO: not sure if necessary but updated to return new statistics
     def get_base_statistics(self, subgroup, data):
@@ -157,6 +149,14 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
             return size_sg ** a * (max_possible) #TODO: how to extract max from all sklearn metrics dynamically
             #return self.metric(y_true=sg_target_variable, y_pred=sg_target_estimate)
 
+
+#default eval function is average sub ranking loss, see Duivesteijn & Thaele
+def default_evaluation_metric(y_true, y_pred):
+    sorted_true = y_true[np.argsort(y_pred)]
+    numerator_sum = 0
+    for i in range(len(y_true)):
+        if sorted_true[i] == 1: numerator_sum += (sorted_true[:i+1] == 0).sum() / len(sorted_true[:i+1])
+    return numerator_sum/y_true.sum()
 
 # TODO Update to new format
 #class GAPredictionQFNumeric(ps.AbstractInterestingnessMeasure):
