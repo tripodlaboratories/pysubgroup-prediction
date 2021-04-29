@@ -89,10 +89,11 @@ resultDFS.to_dataframe()
 
 np.random.seed(1111)
 
-eval_dict = {"AUROC":roc_auc_score, "average_precision_score":average_precision_score}
+eval_dict = {"AUPRC(ish)":average_precision_score}
 target_variables = np.random.randint(low=0, high=2, size=1000)
 target_estimates = np.random.uniform(size=1000)
 target = ps.PredictionTarget(target_variables, target_estimates, eval_dict=eval_dict)
+target = ps.PredictionTarget(target_variables, target_estimates)
 
 
 searchSpace_Nominal = ps.create_nominal_selectors(data, ignore=['credit_amount'])
@@ -100,8 +101,8 @@ searchSpace_Numeric = [] #ps.create_numeric_selectors(data, ignore=['credit_amou
 searchSpace = searchSpace_Nominal + searchSpace_Numeric
 
 task = ps.SubgroupDiscoveryTask(data, target, searchSpace,
-                                result_set_size=10, depth=5,
-                                qf=ps.CountCallsInterestingMeasure(ps.PredictionQFNumeric(0, False)))
+                    result_set_size=10, depth=3,
+                    qf=ps.CountCallsInterestingMeasure(ps.PredictionQFNumeric(1, True)))
 
 resultBS = ps.BeamSearch().execute(task)
-resultBS.to_dataframe()[["subgroup", "quality", "size_sg", "size_dataset", "metric_sg", "metric_dataset"]]
+resultBS.to_dataframe()[["subgroup", "quality", "pos_sg", "neg_sg", "size_sg", "size_dataset", "metric_sg", "metric_dataset"]]

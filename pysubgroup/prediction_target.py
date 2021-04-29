@@ -4,7 +4,6 @@ Created on 14.04.2021
 @author: Tony Culos
 '''
 import numbers
-import operator
 from collections import namedtuple
 from functools import total_ordering
 import numpy as np
@@ -21,7 +20,9 @@ class PredictionTarget:
         self.target_estimate = target_estimate
         self.eval_dict = eval_dict
         if not eval_dict is None:
-            PredictionTarget.statistic_types = PredictionTarget.statistic_types + tuple([x +"_sg" for x in eval_dict.keys()]) + tuple([x +"_dataset" for x in eval_dict.keys()])
+            PredictionTarget.statistic_types = ('size_sg', 'size_dataset', 'pos_sg', 'pos_dataset', 'neg_sg', 'neg_dataset', "metric_sg", "metric_dataset") + tuple([x +"_sg" for x in eval_dict.keys()]) + tuple([x +"_dataset" for x in eval_dict.keys()])
+        else:
+            PredictionTarget.statistic_types = ('size_sg', 'size_dataset', 'pos_sg', 'pos_dataset', 'neg_sg', 'neg_dataset', "metric_sg", "metric_dataset")
         if eval_func is None:
             self.evaluation_metric = default_evaluation_metric
         elif not hasattr(metrics, eval_func.__name__):
@@ -82,7 +83,10 @@ class PredictionTarget:
 class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
     tpl = namedtuple('PredictionQFNumeric_parameters', ('size_sg', 'metric_sg', 'estimate'))
     @staticmethod
-    def prediction_qf_numeric(a, size_sg, metric_sg):
+    def prediction_qf_numeric(a, size_sg, metric_sg, invert):
+        if invert:
+            if metric_sg != 0: return size_sg ** a * (1.0/metric_sg)
+            return size_sg ** a * (metric_sg)
         return size_sg ** a * (metric_sg)
 
     def __init__(self, a, invert=False):
@@ -113,7 +117,7 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
     def evaluate(self, subgroup, target, data, statistics=None):
         statistics = self.ensure_statistics(subgroup, target, data, statistics)
         #dataset = self.dataset_statistics #can be used to compare all data AUC to subgroup AUC
-        return PredictionQFNumeric.prediction_qf_numeric(self.a, statistics.size_sg, statistics.metric_sg)
+        return PredictionQFNumeric.prediction_qf_numeric(self.a, statistics.size_sg, statistics.metric_sg, self.invert)
 
 
     def calculate_statistics(self, subgroup, target, data, statistics=None):
@@ -155,7 +159,7 @@ def default_evaluation_metric(y_true, y_pred):
     sorted_true = y_true[np.argsort(y_pred)]
     numerator_sum = 0
     for i in range(len(y_true)):
-        if sorted_true[i] == 1: numerator_sum += (sorted_true[:i+1] == 0).sum() / len(sorted_true[:i+1])
+        if sorted_true[i] == 1: numerator_sum += (sorted_true[:i+1] == 0).sum()
     return numerator_sum/y_true.sum()
 
 # TODO Update to new format
