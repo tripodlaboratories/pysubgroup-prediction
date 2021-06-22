@@ -43,7 +43,6 @@ class PredictionTarget:
     def get_attributes(self):
         return [self.target_variable, self.target_estimate]
 
-    #TODO: not sure if necessary but updated to return new statistics
     def get_base_statistics(self, subgroup, data):
         cover_arr, size_sg = ps.get_cover_array_and_size(subgroup)
         size_dataset = data.shape[0]
@@ -85,8 +84,10 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
     @staticmethod
     def prediction_qf_numeric(a, size_sg, metric_sg, invert):
         if invert:
-            if metric_sg != 0: return size_sg ** a * (1.0/metric_sg)
-            return size_sg ** a * (metric_sg)
+            if metric_sg != 0:
+                return size_sg ** a * (1.0/metric_sg)
+            else:
+                return float("inf") #TODO: when metric_sg = 0 and inverted just return inf, this assumes low metric is bad
         return size_sg ** a * (metric_sg)
 
     def __init__(self, a, invert=False):
@@ -103,7 +104,6 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
         self.has_constant_statistics = False
         self.estimator = PredictionQFNumeric.OptimisticEstimator(self)
 
-    #TODO: raise error when data does not align with target vars
     def calculate_constant_statistics(self, data, target):
         self.size = len(data)
         self.all_target_variable = target.target_variable
@@ -148,10 +148,9 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
         def calculate_constant_statistics(self, data, target):  # pylint: disable=unused-argument
             self.metric = float('inf')# target.evaluation_metric
 
-        def get_estimate(self, size_sg, a):  # pylint: disable=unused-argument
+        def get_estimate(self, size_sg, a):
             max_possible = 1
             return size_sg ** a * (max_possible) #TODO: how to extract max from all sklearn metrics dynamically
-            #return self.metric(y_true=sg_target_variable, y_pred=sg_target_estimate)
 
 
 #default eval function is average sub ranking loss, see Duivesteijn & Thaele
@@ -161,34 +160,3 @@ def default_evaluation_metric(y_true, y_pred):
     for i in range(len(y_true)):
         if sorted_true[i] == 1: numerator_sum += (sorted_true[:i+1] == 0).sum()
     return numerator_sum/y_true.sum()
-
-# TODO Update to new format
-#class GAPredictionQFNumeric(ps.AbstractInterestingnessMeasure):
-#    def __init__(self, a, invert=False):
-#        self.a = a
-#        self.invert = invert
-#
-#    def evaluate_from_dataset(self, data, subgroup, weighting_attribute=None):
-#        (instances_dataset, _, instances_subgroup, mean_sg) = subgroup.get_base_statistics(data, weighting_attribute)
-#        if instances_subgroup in (0, instances_dataset):
-#            return 0
-#        max_mean = get_max_generalization_mean(data, subgroup, weighting_attribute)
-#        relative_size = (instances_subgroup / instances_dataset)
-#        return ps.conditional_invert(relative_size ** self.a * (mean_sg - max_mean), self.invert)
-
-#    def supports_weights(self):
-#        return True
-
-#    def is_applicable(self, subgroup):
-#        return isinstance(subgroup.target, NumericTarget)
-
-
-#def get_max_generalization_mean(data, subgroup, weighting_attribute=None):
-#    selectors = subgroup.subgroup_description.selectors
-#    generalizations = ps.powerset(selectors)
-#    max_mean = 0
-#    for sels in generalizations:
-#        sg = ps.Subgroup(subgroup.target, ps.Conjunction(list(sels)))
-#        mean_sg = sg.get_base_statistics(data, weighting_attribute)[3]
-#        max_mean = max(max_mean, mean_sg)
-#    return max_mean
