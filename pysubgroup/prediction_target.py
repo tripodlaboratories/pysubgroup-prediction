@@ -46,7 +46,11 @@ class PredictionTarget:
     def get_base_statistics(self, subgroup, data):
         cover_arr, size_sg = ps.get_cover_array_and_size(subgroup)
         size_dataset = data.shape[0]
-        metric_sg = self.evaluation_metric(self.target_variable[cover_arr], self.target_estimate[cover_arr])
+        if np.std(self.target_variable[cover_arr]) != 0:
+            metric_sg = self.evaluation_metric(self.target_variable[cover_arr], self.target_estimate[cover_arr])
+        else:
+            metric_sg = float("-inf")
+
         metric_dataset = self.evaluation_metric(self.target_variable, self.target_estimate)
         return (size_sg, size_dataset, metric_sg, metric_dataset)
 
@@ -68,7 +72,12 @@ class PredictionTarget:
         statistics['neg_sg'] = (1 - self.target_variable[cover_arr]).sum()
         statistics['neg_dataset'] = (1 - self.target_variable).sum()
 
-        statistics['metric_sg'] = self.evaluation_metric(self.target_variable[cover_arr], self.target_estimate[cover_arr])
+        #if one case subgroup set metric to negative inf
+        if np.std(self.target_variable[cover_arr]) != 0:
+            statistics['metric_sg'] = self.evaluation_metric(self.target_variable[cover_arr], self.target_estimate[cover_arr])
+        else:
+            statistics['metric_sg'] = float('-inf')
+
         statistics['metric_dataset'] = self.evaluation_metric(self.target_variable, self.target_estimate)
 
         if not self.eval_dict is None:
@@ -129,7 +138,11 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
             metric_sg = target.evaluation_metric(sg_target_variable, sg_target_estimate)
         else:
             estimate = float('-inf')
-            metric_sg = 0# float('-inf')
+            if self.invert:
+                metric_sg = float('-inf')
+            else:
+                metric_sg = 0# float('-inf')
+
         return PredictionQFNumeric.tpl(sg_size, metric_sg, estimate)
 
 
