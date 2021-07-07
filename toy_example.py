@@ -81,6 +81,9 @@ resultSimpleDFS = ps.SimpleDFS().execute(task)
 resultDFS = ps.DFS(ps.BitSetRepresentation).execute(task)
 resultDFS.to_dataframe()
 
+#############################################
+## Toy example attempting to invert target ##
+#############################################
 
 ############################################################
 ## Toy example using the default eval to generate answers ##

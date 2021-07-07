@@ -94,7 +94,7 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
         if not isinstance(a, numbers.Number):
             raise ValueError(f'a is not a number. Received a={a}')
         self.a = a
-        self.size=None
+        self.size = None
         self.invert = invert
         self.required_stat_attrs = ('size_sg', 'metric_sg')
         self.dataset_statistics = None
