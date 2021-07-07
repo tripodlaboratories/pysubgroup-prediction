@@ -72,7 +72,7 @@ searchSpace_Nominal = ps.create_nominal_selectors(data, ignore=['credit_amount']
 searchSpace_Numeric = [] #ps.create_numeric_selectors(data, ignore=['credit_amount'], nbins=10)
 searchSpace = searchSpace_Nominal + searchSpace_Numeric
 
-task = ps.SubgroupDiscoveryTask(data, target, searchSpace, result_set_size=10, depth=5, qf=ps.CountCallsInterestingMeasure(ps.PredictionQFNumeric(1, False)))
+task = ps.SubgroupDiscoveryTask(data, target, searchSpace, result_set_size=10, depth=5, qf=ps.CountCallsInterestingMeasure(ps.PredictionQFNumeric(0.5, False)))
 
 resultBS = ps.BeamSearch().execute(task)
 resultA = ps.Apriori(use_numba=False).execute(task)
@@ -81,9 +81,17 @@ resultSimpleDFS = ps.SimpleDFS().execute(task)
 resultDFS = ps.DFS(ps.BitSetRepresentation).execute(task)
 resultDFS.to_dataframe()
 
+resultDFS.to_dataframe()[["subgroup", "quality", "metric_dataset", "metric_sg"]]
+
 #############################################
 ## Toy example attempting to invert target ##
 #############################################
+eval_dict = {"actual AUROC":roc_auc_score}
+target = ps.PredictionTarget(target_variables, target_estimates, roc_auc_score, eval_dict)
+task = ps.SubgroupDiscoveryTask(data, target, searchSpace, result_set_size=10, depth=5, qf=ps.PredictionQFNumeric(a=0.5, invert=True))
+
+resultDFS = ps.DFS(ps.BitSetRepresentation).execute(task)
+resultDFS.to_dataframe()[["subgroup", "quality", "metric_dataset", "metric_sg", "actual AUROC_sg"]]
 
 ############################################################
 ## Toy example using the default eval to generate answers ##
