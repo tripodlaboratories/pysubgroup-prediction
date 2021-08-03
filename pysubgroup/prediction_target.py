@@ -8,8 +8,6 @@ from collections import namedtuple
 from functools import total_ordering
 import numpy as np
 import pysubgroup as ps
-import sklearn.metrics as metrics #TODO: import of entire package may be unnecessary, see if attribute list can be used
-
 
 @total_ordering
 class PredictionTarget:
@@ -25,8 +23,6 @@ class PredictionTarget:
             PredictionTarget.statistic_types = ('size_sg', 'size_dataset', 'pos_sg', 'pos_dataset', 'neg_sg', 'neg_dataset', "metric_sg", "metric_dataset")
         if eval_func is None:
             self.evaluation_metric = default_evaluation_metric
-        elif not hasattr(metrics, eval_func.__name__):
-            raise ValueError("eval_func passed must be from sklearn.metrics")
         else:
             # TODO: move evaluation metric to quality function
             self.evaluation_metric = eval_func
