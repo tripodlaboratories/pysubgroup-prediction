@@ -8,7 +8,7 @@ from collections import namedtuple
 from functools import total_ordering
 import numpy as np
 import pysubgroup as ps
-import sklearn.metrics as metrics #TODO: import of entire package may be uneccesary, see if attribute list can be used
+import sklearn.metrics as metrics #TODO: import of entire package may be unnecessary, see if attribute list can be used
 
 
 @total_ordering
@@ -28,7 +28,7 @@ class PredictionTarget:
         elif not hasattr(metrics, eval_func.__name__):
             raise ValueError("eval_func passed must be from sklearn.metrics")
         else:
-            # TODO: move evaluation metric to qualit function
+            # TODO: move evaluation metric to quality function
             self.evaluation_metric = eval_func
 
     def __repr__(self):
@@ -68,6 +68,7 @@ class PredictionTarget:
         statistics['neg_sg'] = (1 - self.target_variable[cover_arr]).sum()
         statistics['neg_dataset'] = (1 - self.target_variable).sum()
 
+        # TODO: metric definition and calculation should go into the quality function!
         statistics['metric_sg'] = self.evaluation_metric(self.target_variable[cover_arr], self.target_estimate[cover_arr])
         statistics['metric_dataset'] = self.evaluation_metric(self.target_variable, self.target_estimate)
 
@@ -149,8 +150,9 @@ class PredictionQFNumeric(ps.BoundedInterestingnessMeasure):
             self.metric = float('inf')# target.evaluation_metric
 
         def get_estimate(self, size_sg, a):
+            # TODO: how to extract max from all sklearn metrics dynamically (or just set it by hand when instantiating the QF)
             max_possible = 1
-            return size_sg ** a * (max_possible) #TODO: how to extract max from all sklearn metrics dynamically
+            return size_sg ** a * (max_possible) 
 
 
 #default eval function is average sub ranking loss, see Duivesteijn & Thaele
