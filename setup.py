@@ -14,7 +14,7 @@ setup(
         'pandas>=0.24.0',
         'scipy',
         'numpy',
-        'sklearn',
+        'scikit-learn',
         'matplotlib'
     ],
     tests_require=['pytest'],
