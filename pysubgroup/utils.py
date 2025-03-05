@@ -231,7 +231,7 @@ class SubgroupDiscoveryResult:
             statistics_to_show = type(self.task.target).statistic_types
         res = self.to_table(statistics_to_show, True, include_target)
         headers = res.pop(0)
-        df = pd.DataFrame(res, columns=headers, dtype=np.float64)
+        df = pd.DataFrame(res, columns=headers)
         if autoround:
             df = results_df_autoround(df)
         return df
